@@ -2,8 +2,8 @@ public class Percolation {
     private boolean[] block; // true indicates open
     private int[] id;
     private int[] sz;
-    private int n;
-//    int numOpen = 0;
+    private final int n;
+    private int numOpen = 0;
     
     public Percolation(int n)  // create n-by-n grid, with all sites blocked
     {
@@ -28,23 +28,35 @@ public class Percolation {
     // open site (row, col) if it is not open already
     public void open(int row, int col) 
     {
+        if (isOpen(row, col))
+            return;
         int cell = cellNum(row, col);
         
         block[cell] = true;
+        numOpen += 1;
         if (row == 1) union(cell, topVirtual());
-        if (row == n) union(cell, bottomVirtual());
+//        if (row == n) union(cell, bottomVirtual());
         if (row > 1 && isOpen(row - 1, col)) union(cell, cellNum(row - 1, col));
         if (row < n && isOpen(row + 1, col)) union(cell, cellNum(row + 1, col));
         if (col > 1 && isOpen(row, col - 1)) union(cell, cellNum(row, col - 1));
         if (col < n && isOpen(row, col + 1)) union(cell, cellNum(row, col + 1));
+        if (isFull(row, col))
+            for (int j = 1; j <= n; ++j) // linear check, bad!
+            if (connected(cell, cellNum(n, j))) {
+            union(cell, bottomVirtual());
+            break;
+        }
     }
     public boolean isOpen(int row, int col)  // is site (row, col) open?
     {
-        return  block[cellNum(row, col)];
+        return block[cellNum(row, col)];
     }
     public boolean isFull(int row, int col)  // is site (row, col) full?
     {
-        return !isOpen(row, col);
+        return connected(cellNum(row, col), topVirtual());
+    }
+    public int numberOfOpenSites() {
+        return numOpen;
     }
     public boolean percolates()              // does the system percolate?
     {
@@ -136,6 +148,7 @@ public class Percolation {
         assert (pc.connected(1, pc.topVirtual()));
         assert (pc.connected(0, 1));
         assert (!pc.connected(2, 3));
+        assert (pc.numberOfOpenSites() == 2);
         System.out.println("-------------------------------");
         
         
@@ -145,14 +158,15 @@ public class Percolation {
             pc.open(i, 2);
             pc.printInfo();
         }
-        
         System.out.println("-------------------------------");
         pc.printBlock();
         System.out.println("After ops of col open percolates: " + pc.percolates());
         assert (pc.connected(1, 4));
         assert (pc.connected(4, 7));
         assert (pc.connected(7, pc.bottomVirtual()));
+        assert (pc.numberOfOpenSites() == 4);
         assert (pc.percolates());
         System.out.println("-------------------------------");
+        System.out.println(pc.numberOfOpenSites());
     }
 }
