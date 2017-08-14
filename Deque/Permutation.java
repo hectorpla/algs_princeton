@@ -14,5 +14,7 @@ public class Permutation {
             k--;
         }
         // challenge: use O(k) space; do it with Deque
+        
+        // knuth shuffle
     }
 }

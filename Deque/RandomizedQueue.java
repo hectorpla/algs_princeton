@@ -48,6 +48,7 @@ public class RandomizedQueue<Item> implements Iterable<Item> {
         for (int i = 0; i < size(); ++i) {
             newArray[i] = s[(first + i) % s.length];
         }
+        // coupled with the size() method
         last = size() - 1; // be careful of the order
         first = 0;        
         s = newArray;
