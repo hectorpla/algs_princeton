@@ -13,20 +13,20 @@ public class Board {
     
     public Board(int[][] blocks) {         // construct a board from an n-by-n array of blocks
         // (where blocks[i][j] = block in row i, column j)
-        this.blocks = Arrays.copyOf(blocks, blocks.length);
         n = blocks.length;
+        this.blocks = newBoard(blocks);
     }
     public int dimension() {                // board dimension n
         return n;
     }
     public int hamming() {                 // number of blocks out of place
-        int count = 0, place = 1;
-        for (int[] row : blocks) {
-            for (int cell : row) {
-                if (cell != place++) { count++; }
+        int place = 0, count = 0;
+        for (int p = 0; p < n * n - 1; ++p) {
+            if (blocks[p / n][p % n] != p + 1) {
+                count++;
             }
         }
-        if (blocks[n-1][n-1] == 0) { count++; }
+        StdOut.println("hamming: " + count);
         return count;
     }
     public int manhattan() {                // sum of Manhattan distances between blocks and goal
@@ -35,25 +35,21 @@ public class Board {
             for (int cell : row) {
                 place++;
                 if (cell == 0) { continue; }
-                int dist = Math.abs(cell - place);
-                sum += dist / n + dist % n;
+                int m1 = (cell - 1) / n, n1 = (cell - 1) % n;
+                int m2 = (place - 1) / n, n2 = (place - 1) % n;
+                sum += Math.abs(m1 - m2) + Math.abs(n1 - n2);
             }
         }
+        StdOut.println("manhattan: " + sum);
         return sum;
     }
     public boolean isGoal() {               // is this board the goal board?
-        int place = 0;
-        for (int p = 0; p < n * n - 1; ++p) {
-            if (blocks[p / n][p % n] != p + 1) {
-                return false;
-            }
-        }
-        return true;
+        return hamming() == 0;
     }
     public Board twin() {                    // a board that is obtained by exchanging any pair of blocks
-        int[][] tw = newBoard();
+        int[][] tw = newBoard(blocks);
         if (n > 1) {
-            exch(blocks, 0, 0, 0, 1);
+            exch(tw, 0, 0, 0, 1);
         }
         return new Board(tw);
     }
@@ -61,7 +57,7 @@ public class Board {
         Board yboard = (Board) y;
         if (yboard.n != this.n) { return false; }
         for (int i = 0; i < n; ++i) {
-            for (int j = 0; j < n; ++i) {
+            for (int j = 0; j < n; ++j) {
                 if (blocks[i][j] != yboard.blocks[i][j]) { return false; }
             }
         }
@@ -71,20 +67,25 @@ public class Board {
         int iZero = 0, jZero = 0;
         int[] deltaX = {1, 0, 0, -1};
         int[] deltaY = {0, 1, -1, 0};
-        int[][] board = newBoard();
+        int[][] board = newBoard(blocks);
         LinkedList<Board> neighbors = new LinkedList<>();
         
+//        StdOut.println(new Board(board));
         for (int p = 0; p < n * n - 1; ++p) {
-            if (blocks[p / n][p % n] == 0) {
+//            StdOut.println(p);
+            if (board[p / n][p % n] == 0) {
                 iZero = p / n;
                 jZero = p % n;
                 break;
             }
         }
+//        StdOut.println(iZero + ", " + jZero);
         for (int d = 0; d < 4; ++d) {
             int i = iZero + deltaX[d], j = jZero + deltaY[d];
-            if (i == 0 || i >= n || j == 0 || j >= n) { continue; }
+            if (i < 0 || i >= n || j < 0 || j >= n) { continue; }
+            StdOut.println(deltaX[d] + ", " + deltaY[d]);
             exch(board, iZero, jZero, i, j);
+            
             Board neighbor = new Board(board);
             exch(board, i, j, iZero, jZero);
             neighbors.add(neighbor);
@@ -98,12 +99,20 @@ public class Board {
             for (int cell : row) {
                 sb.append(" " + cell);
             }
+            sb.append("\n");
         }
         return sb.toString();
     }
-    private int[][] newBoard() {
-        // assume deep copy
-        return Arrays.copyOf(blocks, blocks.length);
+    private int[][] newBoard(int[][] old) {
+        // copyOf: shallow copy
+//        return Arrays.copyOf(blocks, blocks.length);
+        int[][] board = new int[n][n];
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n; ++j) {
+                board[i][j] = old[i][j];
+            }
+        }
+        return board;
     }
     private void exch(int[][] board, int i1, int j1, int i2, int j2) {
         int temp = board[i1][j1];
@@ -120,8 +129,40 @@ public class Board {
         Board board = new Board(blocks);
         
         assert board.dimension() == n;
-        assert board.hamming() == 2;
+        assert board.hamming() == 1;
         assert board.manhattan() == 1;
         assert board.isGoal() == false;
+        
+        StdOut.println("original:\n" + board);
+        StdOut.println("twin:\n" + board.twin());
+        
+        StdOut.println("neighbors:");
+        for (Board neighbor : board.neighbors()) {
+            StdOut.println(neighbor);
+        }
+        
+        StdOut.println("--------------------------------");
+        
+        // test on 3 x 3 puzzle
+        In in2 = new In("8puzzle/puzzle3x3-19.txt");
+        int n2 = in2.readInt();
+        int[][] blocks2 = new int[n2][n2];
+        for (int i = 0; i < n2; i++)
+            for (int j = 0; j < n2; j++)
+            blocks2[i][j] = in2.readInt();
+        Board board2 = new Board(blocks2);
+        StdOut.println("original:\n" + board2);
+        
+        assert board2.dimension() == n2;
+        assert board2.hamming() == 7;
+        assert board2.manhattan() == 19;
+        assert board2.isGoal() == false;
+        
+        StdOut.println("twin:\n" + board2.twin());
+        
+        StdOut.println("neighbors:");
+        for (Board neighbor : board2.neighbors()) {
+            StdOut.println(neighbor);
+        }
     }
 }
